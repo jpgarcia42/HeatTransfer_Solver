@@ -1,0 +1,19 @@
+# Python / Django backend
+__pycache__/
+*.py[cod]
+*.pyc
+.env
+venv/
+.venv/
+
+# Django
+backend/db.sqlite3
+backend/staticfiles/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solucionador de Transferência de Calor — USP</title>
+  <meta name="description" content="Resolva o teste de transferência de calor baseado no Nº USP. Convecção natural e forçada com correlações de Churchill, Whitaker e Hilpert." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1e2630; --border: #30363d;
+      --accent: #4f8ef7; --accent2: #a371f7; --accent3: #3fb950; --warn: #f78166;
+      --text: #e6edf3; --muted: #8b949e; --glow: rgba(79,142,247,.18);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:2rem 1rem; }
+
+    .hero { text-align:center; margin-bottom:2.5rem; }
+    .hero h1 { font-size:clamp(1.6rem,4vw,2.6rem); font-weight:700; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:.5rem; }
+    .hero p { color:var(--muted); font-size:.95rem; }
+
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.75rem; margin-bottom:1.5rem; max-width:820px; margin-left:auto; margin-right:auto; }
+    .card h2 { font-size:1rem; font-weight:600; color:var(--accent); letter-spacing:.03em; text-transform:uppercase; margin-bottom:1.25rem; display:flex; align-items:center; gap:.5rem; }
+
+    .digit-row { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+    .digit-group { display:flex; flex-direction:column; align-items:center; gap:.5rem; }
+    .digit-group label { font-size:.82rem; color:var(--muted); font-weight:500; }
+    .digit-input { width:72px; height:72px; font-size:2rem; font-family:'JetBrains Mono',monospace; font-weight:600; text-align:center; background:var(--surface2); border:2px solid var(--border); border-radius:12px; color:var(--text); outline:none; transition:border-color .2s,box-shadow .2s; -moz-appearance:textfield; }
+    .digit-input::-webkit-inner-spin-button,.digit-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+    .digit-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--glow); }
+
+    .mode-bar { max-width:820px; margin:0 auto 1rem; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:.65rem 1rem; display:flex; align-items:center; gap:.6rem; font-size:.82rem; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+    .dot.ok { background:var(--accent3); box-shadow:0 0 6px var(--accent3); }
+    .dot.warn { background:#e3b341; box-shadow:0 0 6px #e3b341; }
+
+    .btn-calc { display:block; width:100%; max-width:280px; margin:1.5rem auto 0; padding:.85rem 1.5rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; border-radius:10px; color:#fff; font-family:'Inter',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; letter-spacing:.02em; transition:opacity .2s,transform .1s; }
+    .btn-calc:hover { opacity:.9; } .btn-calc:active { transform:scale(.97); }
+
+    .config-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:.75rem; }
+    .cfg-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:.85rem 1rem; }
+    .cfg-item .label { font-size:.75rem; color:var(--muted); margin-bottom:.25rem; }
+    .cfg-item .value { font-family:'JetBrains Mono',monospace; font-size:.95rem; font-weight:600; }
+
+    .props-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    .props-table th { text-align:left; padding:.5rem .75rem; color:var(--muted); font-weight:500; border-bottom:1px solid var(--border); }
+    .props-table td { padding:.5rem .75rem; font-family:'JetBrains Mono',monospace; border-bottom:1px solid rgba(48,54,61,.5); }
+    .props-table tr:last-child td { border-bottom:none; }
+
+    .result-items { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; }
+    .result-box { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.25rem 1rem; position:relative; overflow:hidden; }
+    .result-box::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+    .result-box.green::before { background:var(--accent3); }
+    .result-box.purple::before { background:var(--accent2); }
+    .result-box .item-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+    .result-box .item-value { font-size:1.8rem; font-family:'JetBrains Mono',monospace; font-weight:700; line-height:1; }
+    .result-box .item-unit { font-size:.78rem; color:var(--muted); margin-top:.3rem; }
+    .result-box .item-desc { font-size:.78rem; color:var(--muted); margin-top:.5rem; border-top:1px solid var(--border); padding-top:.5rem; }
+
+    .log-area { background:#010409; border:1px solid var(--border); border-radius:10px; padding:1rem; font-family:'JetBrains Mono',monospace; font-size:.8rem; color:#7ee787; line-height:1.7; max-height:340px; overflow-y:auto; white-space:pre-wrap; }
+    .sep { height:1px; background:var(--border); margin:1rem 0; }
+    .formula { font-family:'JetBrains Mono',monospace; font-size:.78rem; color:#a371f7; background:rgba(163,113,247,.08); border:1px solid rgba(163,113,247,.2); border-radius:6px; padding:.2rem .45rem; display:inline-block; margin:.1rem; }
+    .error-box { background:rgba(247,129,102,.08); border:1px solid var(--warn); border-radius:10px; padding:1rem; color:var(--warn); font-size:.9rem; }
+    .hidden { display:none; }
+    .footnote { text-align:center; font-size:.78rem; color:var(--muted); margin-top:2rem; max-width:820px; margin-left:auto; margin-right:auto; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:.4rem; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    @media(max-width:480px) { .digit-input { width:60px; height:60px; font-size:1.6rem; } }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🌡️ Solucionador de Transferência de Calor</h1>
+  <p>Convecção Natural e Forçada — Baseado no Nº USP</p>
+</div>
+
+<div class="mode-bar" id="modeBar">
+  <div class="dot" id="modeDot"></div>
+  <span id="modeMsg">Detectando modo de operação...</span>
+</div>
+
+<div class="card">
+  <h2><span>🎓</span> Número USP — Três últimos dígitos</h2>
+  <div class="digit-row">
+    <div class="digit-group"><label>D₂ (centena)</label><input class="digit-input" id="d2" type="number" min="0" max="9" placeholder="0" /></div>
+    <div class="digit-group"><label>D₁ (dezena)</label><input class="digit-input" id="d1" type="number" min="0" max="9" placeholder="0" /></div>
+    <div class="digit-group"><label>D₀ (unidade)</label><input class="digit-input" id="d0" type="number" min="0" max="9" placeholder="0" /></div>
+  </div>
+  <button class="btn-calc" id="calcBtn" onclick="runCalc()">⚡ Calcular</button>
+</div>
+
+<div id="output" class="hidden">
+  <div class="card"><h2>⚙️ Configuração do Problema</h2><div class="config-grid" id="configGrid"></div></div>
+  <div class="card">
+    <h2>💧 Propriedades do Fluido (<span id="propSource">—</span> @ Tf)</h2>
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem" id="propNote"></p>
+    <table class="props-table" id="propsTable"><thead><tr><th>Propriedade</th><th>Símbolo</th><th>Valor</th><th>Unidade</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="card"><h2>🔢 Números Adimensionais</h2><div class="config-grid" id="dimlessGrid"></div><div class="sep"></div><p style="font-size:.82rem;color:var(--muted)">Correlações: <span id="corrNames"></span></p></div>
+  <div class="card"><h2>✅ Resultados</h2><div class="result-items" id="resultItems"></div></div>
+  <div class="card"><h2>📋 Log de Cálculo</h2><div class="log-area" id="logArea"></div></div>
+</div>
+
+<div class="footnote">
+  Modo local com Django: propriedades exatas via CoolProp. Modo online (GitHub Pages): correlações polinomiais de engenharia.
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  MODE DETECTION
+// ══════════════════════════════════════════════════════════════
+const API = 'http://127.0.0.1:8000/props/';
+let USE_COOLPROP = false;   // will be set after server check
+
+async function detectMode() {
+  try {
+    const r = await fetch(API + '?fluid=Air&T=30', { signal: AbortSignal.timeout(1500) });
+    if (r.ok) {
+      USE_COOLPROP = true;
+      document.getElementById('modeDot').className = 'dot ok';
+      document.getElementById('modeMsg').textContent = '🖥️ Modo Local — CoolProp via Django (valores exatos)';
+      return;
+    }
+  } catch (_) {}
+  USE_COOLPROP = false;
+  document.getElementById('modeDot').className = 'dot warn';
+  document.getElementById('modeMsg').innerHTML =
+    '🌐 Modo Online — Correlações polinomiais de engenharia (Django offline). ' +
+    'Para CoolProp exato: execute <code style="color:var(--accent)">iniciar_servidor.bat</code>.';
+}
+detectMode();
+
+// ══════════════════════════════════════════════════════════════
+//  FLUID PROPERTIES — COOLPROP (via Django API)
+// ══════════════════════════════════════════════════════════════
+async function getProps_CoolProp(fluid, T_C) {
+  const r = await fetch(`${API}?fluid=${fluid}&T=${T_C}&P=100000`);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FLUID PROPERTIES — POLYNOMIAL FALLBACK
+//  Sources: Incropera 7th ed. App. A, Holman "Heat Transfer" App.
+//  Valid: 10–100 °C, P = 1 atm
+// ══════════════════════════════════════════════════════════════
+function airProps(Tc) {
+  const T = Tc + 273.15, P = 1e5, R = 287.058;
+  const rho   = P / (R * T);
+  const beta  = 1 / T;
+  const mu_ref = 1.716e-5, T_ref = 273.15, S = 110.4;
+  const mu    = mu_ref * Math.pow(T/T_ref, 1.5) * (T_ref+S)/(T+S);
+  const k     = -3.82e-3 + 1.005e-4*T - 5.91e-8*T*T;
+  const cp    = 1030 - 0.1975*T + 3.86e-4*T*T - 2.165e-7*T*T*T;
+  const nu    = mu/rho, alpha = k/(rho*cp), Pr = nu/alpha;
+  return { rho, mu, k, cp, beta, nu, alpha, Pr };
+}
+
+function waterProps(Tc) {
+  const rho  = 1000.6 - 0.0128*Tc - 0.003711*Tc*Tc + 3.7e-6*Tc*Tc*Tc;
+  const cp   = 4209.1 - 1.3141*Tc + 0.014068*Tc*Tc - 5.382e-5*Tc*Tc*Tc;
+  const T_K  = Tc + 273.15;
+  const mu   = 2.414e-5 * Math.pow(10, 247.8/(T_K - 140));
+  const k    = 0.5561 + 2.769e-3*Tc - 1.802e-5*Tc*Tc;
+  const beta = -6.8863e-5 + 9.085e-6*Tc - 1.024e-7*Tc*Tc;
+  const nu   = mu/rho, alpha = k/(rho*cp), Pr = nu/alpha;
+  return { rho, mu, k, cp, beta, nu, alpha, Pr };
+}
+
+async function getProps(fluid, Tc) {
+  if (USE_COOLPROP) return getProps_CoolProp(fluid, Tc);
+  return fluid === 'Water' ? waterProps(Tc) : airProps(Tc);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NUSSELT CORRELATIONS
+// ══════════════════════════════════════════════════════════════
+const g = 9.80665;
+function Nu_nat_placa(Ra,Pr)      { const w=1+Math.pow(0.492/Pr,9/16); return Math.pow(0.825+0.387*Math.pow(Ra,1/6)/Math.pow(w,8/27),2); }
+function Nu_nat_cilindro(Ra,Pr)   { const w=1+Math.pow(0.559/Pr,9/16); return Math.pow(0.60+0.387*Math.pow(Ra,1/6)/Math.pow(w,8/27),2); }
+function Nu_nat_esfera(Ra,Pr)     { return 2+0.589*Math.pow(Ra,.25)/Math.pow(1+Math.pow(0.469/Pr,9/16),4/9); }
+function Nu_forc_placa(Re,Pr)     { return 0.664*Math.pow(Re,.5)*Math.pow(Pr,1/3); }
+function Nu_forc_cilindro(Re,Pr)  { if(Re*Pr<.2)return NaN; const n=0.62*Math.pow(Re,.5)*Math.pow(Pr,1/3),d=Math.pow(1+Math.pow(.4/Pr,2/3),.25); return 0.3+(n/d)*Math.pow(1+Math.pow(Re/282000,5/8),4/5); }
+function Nu_forc_esfera(Re,Pr,mf,ms){ return 2+(0.4*Math.pow(Re,.5)+0.06*Math.pow(Re,2/3))*Math.pow(Pr,.4)*Math.pow(mf/ms,.25); }
+
+// ══════════════════════════════════════════════════════════════
+//  BISECTION (reliable root finder)
+// ══════════════════════════════════════════════════════════════
+function bisect(f, a, b, tol=1e-6, maxIter=80) {
+  let fa=f(a), fb=f(b);
+  if (fa*fb > 0) throw new Error('Sem raiz em ['+a.toFixed(3)+', '+b.toFixed(3)+'] — verifique o log.');
+  for (let i=0; i<maxIter; i++) {
+    const m=( a+b)/2, fm=f(m);
+    if (Math.abs(fm)<1e-10 || (b-a)/2<tol) return m;
+    fa*fm<0 ? (b=m) : (a=m, fa=fm);
+  }
+  return (a+b)/2;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MAIN
+// ══════════════════════════════════════════════════════════════
+async function runCalc() {
+  const btn = document.getElementById('calcBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Calculando...';
+  document.getElementById('output').classList.add('hidden');
+  const log=[], L=(...s)=>log.push(s.join(''));
+
+  try {
+    const D2=parseInt(document.getElementById('d2').value)||0;
+    const D1=parseInt(document.getElementById('d1').value)||0;
+    const D0=parseInt(document.getElementById('d0').value)||0;
+    if([D2,D1,D0].some(v=>v<0||v>9||isNaN(v))) throw new Error('D₂, D₁, D₀ devem ser dígitos 0–9.');
+
+    L('╔══════════════════════════════════════════╗');
+    L('║   SOLUCIONADOR TRANSFERÊNCIA DE CALOR    ║');
+    L(`║      Modo: ${USE_COOLPROP?'CoolProp (Django)':'Polinômios de engenharia'}          ║`);
+    L('╚══════════════════════════════════════════╝');
+    L(`  D₂=${D2}  D₁=${D1}  D₀=${D0}`);
+
+    // ── Geometry
+    const prod=(D1+1)*(D0+1);
+    let geo, Lc, dim;
+    if (prod>=12&&prod<=28)      { geo='Esfera';               Lc=(6+2*D1)/100; dim='Diâmetro'; }
+    else if (prod>=29&&prod<=100){ geo='Placa Plana Vertical'; Lc=(2+D1)/100;   dim='Comprimento'; }
+    else                         { geo='Cilindro Horizontal';  Lc=(6+2*D1)/100; dim='Diâmetro'; }
+    L(`  prod=${prod} → ${geo}  |  ${dim}=${(Lc*100).toFixed(1)} cm`);
+
+    const fluid  = D1%2!==0 ? 'Water' : 'Air';
+    const Ts     = 35+3*D0;
+    const Tinf   = 15+D2;
+    const v_init = 2+0.5*D0;
+    const Tf     = (Ts+Tinf)/2;
+    const dT     = Ts-Tinf;
+    L(`  Fluido=${fluid}  Ts=${Ts}°C  T∞=${Tinf}°C  Tf=${Tf.toFixed(1)}°C  ΔT=${dT}°C  v=${v_init} m/s`);
+
+    // ── Properties
+    L(`  [Props] Modo: ${USE_COOLPROP?'CoolProp':'Polinômios'}`);
+    const [p, ps] = await Promise.all([getProps(fluid,Tf), getProps(fluid,Ts)]);
+    L(`  ρ=${p.rho.toExponential(3)} μ=${p.mu.toExponential(3)} k=${p.k.toExponential(3)} Pr=${p.Pr.toFixed(4)}`);
+
+    // ── Ra / Re
+    const Ra   = g*p.beta*Math.abs(dT)*Math.pow(Lc,3)/(p.nu*p.alpha);
+    const Re_v = v_init*Lc/p.nu;
+    L(`  Ra=${Ra.toExponential(4)}  Re=${Re_v.toExponential(4)}  Pr=${p.Pr.toFixed(4)}`);
+
+    // ── Nu natural
+    let Nu_nat, cNat;
+    if (geo==='Esfera')              { Nu_nat=Nu_nat_esfera(Ra,p.Pr);   cNat='Churchill (1983)–esfera'; }
+    else if (geo==='Placa Plana Vertical') { Nu_nat=Nu_nat_placa(Ra,p.Pr);    cNat='Churchill & Chu–placa'; }
+    else                             { Nu_nat=Nu_nat_cilindro(Ra,p.Pr); cNat='Churchill & Chu–cilindro'; }
+    const h_nat=Nu_nat*p.k/Lc;
+    L(`  Nu_nat=${Nu_nat.toFixed(4)}  h_nat=${h_nat.toFixed(4)} W/(m²·K)`);
+
+    // ── Nu forced (v_init)
+    let Nu_f0, cFor;
+    if (geo==='Esfera')              { Nu_f0=Nu_forc_esfera(Re_v,p.Pr,p.mu,ps.mu); cFor='Whitaker–esfera'; }
+    else if (geo==='Placa Plana Vertical') { Nu_f0=Nu_forc_placa(Re_v,p.Pr);             cFor='Laminar 0.664–placa'; }
+    else                             { Nu_f0=Nu_forc_cilindro(Re_v,p.Pr);          cFor='Churchill & Bernstein–cilindro'; }
+    const h_forc=Nu_f0*p.k/Lc;
+    L(`  Nu_forc=${Nu_f0.toFixed(4)}  h_forc=${h_forc.toFixed(4)} W/(m²·K)`);
+
+    // ── ITEM 1
+    const ratio=h_forc/h_nat;
+    L(`\n  ITEM 1 → h_forç/h_nat = ${ratio.toFixed(4)}`);
+
+    // ── ITEM 2
+    function nuForc(v){ const Re=v*Lc/p.nu; return geo==='Esfera'?Nu_forc_esfera(Re,p.Pr,p.mu,ps.mu):geo==='Placa Plana Vertical'?Nu_forc_placa(Re,p.Pr):Nu_forc_cilindro(Re,p.Pr); }
+    function cond(v)  { const Nf=nuForc(v),Nc=Math.pow(Nu_nat**3+Nf**3,1/3); return Nf/Nc-0.99; }
+    const flo=cond(1e-4), fhi=cond(500);
+    L(`  [Item 2] cond(0.0001)=${flo.toFixed(5)}  cond(500)=${fhi.toFixed(5)}`);
+    let v_min=null;
+    try { v_min=bisect(cond,1e-4,500); L(`  ITEM 2 → v_mín = ${v_min.toFixed(4)} m/s`); }
+    catch(e){ L(`  ITEM 2 → ${e.message}`); }
+
+    // ── ITEM 3
+    const q=h_forc*dT;
+    L(`  ITEM 3 → q̄'' = ${h_forc.toFixed(4)} × ${dT} = ${q.toFixed(2)} W/m²`);
+
+    // ══ RENDER ════════════════════════════════════════════════
+    document.getElementById('output').classList.remove('hidden');
+    const srcLabel = USE_COOLPROP ? 'CoolProp' : 'Polinômios';
+    document.getElementById('propSource').textContent = srcLabel;
+    document.getElementById('propNote').textContent  = USE_COOLPROP
+      ? 'Valores exatos do CoolProp na temperatura de filme Tf = (Ts+T∞)/2.'
+      : 'Correlações polinomiais de engenharia (Incropera, Holman). Para maior precisão, execute o servidor Django local.';
+
+    document.getElementById('configGrid').innerHTML=[
+      ['Geometria',geo],['Produto',prod],[dim,`${(Lc*100).toFixed(1)} cm`],['Fluido',fluid],
+      ['Ts',`${Ts} °C`],['T∞',`${Tinf} °C`],['Tf',`${Tf.toFixed(1)} °C`],['ΔT',`${dT} °C`],['v',`${v_init} m/s`],
+    ].map(([l,v])=>`<div class="cfg-item"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+    document.querySelector('#propsTable tbody').innerHTML=[
+      ['Massa específica','ρ',p.rho,'kg/m³'],['Viscosidade dinâmica','μ',p.mu,'Pa·s'],
+      ['Condutividade térmica','k',p.k,'W/(m·K)'],['Calor específico','cp',p.cp,'J/(kg·K)'],
+      ['Coef. expansão isobárica','β',p.beta,'1/K'],['Viscosidade cinemática','ν',p.nu,'m²/s'],
+      ['Difusividade térmica','α',p.alpha,'m²/s'],['Prandtl','Pr',p.Pr,'—'],
+    ].map(([n,s,v,u])=>`<tr><td>${n}</td><td style="color:var(--accent2)">${s}</td><td>${v.toExponential(5)}</td><td style="color:var(--muted)">${u}</td></tr>`).join('');
+
+    document.getElementById('dimlessGrid').innerHTML=[
+      ['Rayleigh','Ra',Ra.toExponential(4)],['Reynolds (v init)','Re',Re_v.toExponential(4)],
+      ['Prandtl','Pr',p.Pr.toFixed(4)],['Nu natural','Nu_nat',Nu_nat.toFixed(4)],
+      ['Nu forçado','Nu_f',Nu_f0.toFixed(4)],['h natural','h_nat',`${h_nat.toFixed(4)} W/(m²·K)`],
+      ['h forçado','h_f',`${h_forc.toFixed(4)} W/(m²·K)`],
+    ].map(([l,s,v])=>`<div class="cfg-item"><div class="label">${l} <span style="color:var(--accent2);font-family:monospace">${s}</span></div><div class="value">${v}</div></div>`).join('');
+
+    document.getElementById('corrNames').innerHTML=
+      `<span class="formula">${cNat}</span><span class="formula">${cFor}</span>`;
+
+    document.getElementById('resultItems').innerHTML=[
+      {label:'Item 1 — Razão h',color:'',value:ratio.toFixed(4),unit:'adimensional',desc:`h_forç / h_nat  |  v = ${v_init} m/s`},
+      {label:'Item 2 — v mínima',color:'green',value:v_min!=null?v_min.toFixed(4):'N/A',unit:'m/s',desc:'h_forç / h_comb > 0,99'},
+      {label:'Item 3 — Fluxo médio',color:'purple',value:q.toFixed(2),unit:'W/m²',desc:`h_forç × ΔT = ${h_forc.toFixed(3)} × ${dT}`},
+    ].map(r=>`<div class="result-box ${r.color}"><div class="item-label">${r.label}</div><div class="item-value">${r.value}</div><div class="item-unit">${r.unit}</div><div class="item-desc">${r.desc}</div></div>`).join('');
+
+    document.getElementById('logArea').textContent=log.join('\n');
+
+  } catch(err) {
+    document.getElementById('output').classList.remove('hidden');
+    document.getElementById('configGrid').innerHTML=`<div class="error-box">⚠ ${err.message}</div>`;
+    document.querySelector('#propsTable tbody').innerHTML='';
+    document.getElementById('dimlessGrid').innerHTML='';
+    document.getElementById('resultItems').innerHTML='';
+    document.getElementById('logArea').textContent=log.join('\n')+'\n\nERRO: '+err.message;
+  } finally {
+    btn.disabled=false; btn.textContent='⚡ Calcular';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.digit-input').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter') runCalc();
+      if(e.key>='0'&&e.key<='9'){
+        e.preventDefault(); inp.value=e.key;
+        const inputs=[...document.querySelectorAll('.digit-input')];
+        const idx=inputs.indexOf(inp);
+        if(idx<inputs.length-1) inputs[idx+1].focus();
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
