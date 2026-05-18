@@ -2,7 +2,8 @@
 
 Resolve o teste de Transferência de Calor e Massa baseado nos **três últimos dígitos do Nº USP**.
 
-🔗 **[Abrir online (GitHub Pages)](https://SEU-USER.github.io/TransCal)**
+O arquivo transcal_solver.py é mais preciso que o site apresentado abaixo:
+🔗 **[Abrir online (GitHub Pages)](https://jpgarcia42.github.io/HeatTransfer_Solver/)**
 
 ## O que calcula
 
