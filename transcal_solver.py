@@ -1,6 +1,6 @@
 """
 ================================================================================
-  SOLUCIONADOR DE TRANSFERÊNCIA DE CALOR E MASSA – PROVA USP
+  SOLUCIONADOR DE TRANSFERÊNCIA DE CALOR E MASSA – TESTE USP
 ================================================================================
   Resolve os três itens da prova com base nos três últimos dígitos do Nº USP.
   Requer: pip install CoolProp scipy numpy
@@ -43,10 +43,10 @@ D0 = get_digit("D₀ (unidade)")
 
 prod = (D1 + 1) * (D0 + 1)
 
-if 12 <= prod <= 28:
+if 12 <= prod <= 36:
     geometry = "Esfera"
     Lc_m = (6 + 2 * D1) / 100          # diâmetro em metros
-elif 29 <= prod <= 100:
+elif 37 <= prod <= 100:
     geometry = "Placa Plana Vertical"
     Lc_m = (2 + D1) / 100              # comprimento em metros
 else:
@@ -242,8 +242,24 @@ try:
     v_min = brentq(condition, v_lo, v_hi, xtol=1e-6, maxiter=500)
     print(f"\n  ITEM 2  →  Velocidade mínima = {v_min:.4f} m/s")
     print(f"  (Condição: h_forç / h_comb > 0,99 → convecção natural desprezível)")
+    
+    # ─── NOVO RECALCULO DE VERIFICAÇÃO ───
+    Nu_forc_check = Nu_forc_of_v(v_min)
+    Nu_comb_check = (Nu_nat**3 + Nu_forc_check**3) ** (1 / 3)
+    
+    h_forc_check = Nu_forc_check * props["k"] / Lc_m
+    h_comb_check = Nu_comb_check * props["k"] / Lc_m
+    razao_check  = h_forc_check / h_comb_check
+    
+    print("\n  🔍 VERIFICAÇÃO DO ITEM 2 (com v_mín):")
+    print(f"    Nu_natural            = {Nu_nat:.4f}")
+    print(f"    Nu_forçado (v_mín)    = {Nu_forc_check:.4f}")
+    print(f"    Nu_combinado          = {Nu_comb_check:.4f}")
+    print(f"    h_forçado (v_mín)     = {h_forc_check:.4f} W/(m²·K)")
+    print(f"    h_combinado           = {h_comb_check:.4f} W/(m²·K)")
+    print(f"    Razão h_forç / h_comb = {razao_check:.4f} (Deve ser ligeiramente > 0.9900)")
+
 except ValueError:
-    # Pode ocorrer se a condição nunca chega a 0,99 no intervalo
     f_lo = condition(v_lo)
     f_hi = condition(v_hi)
     print(f"\n  ITEM 2  →  Não foi possível encontrar raiz em [{v_lo}, {v_hi}] m/s")
