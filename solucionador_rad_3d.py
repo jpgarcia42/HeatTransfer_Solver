@@ -56,7 +56,7 @@ def get_perpendicular_vf(w, h, l):
     w: dimensão da superfície emissora (Área 1 = l * w) perpendicular à aresta.
     h: dimensão da superfície receptora (Área 2 = l * h) perpendicular à aresta.
     
-    Equação clássica de Howell / Incropera:
+    Equação do Incropera:
       F_12 = (1 / (pi * X)) * { X * arctan(1/X) + Y * arctan(1/Y) - (X^2 + Y^2)^0.5 * arctan(1/(X^2+Y^2)^0.5)
              + 1/4 * ln( [ (1 + X^2)*(1 + Y^2) / (1 + X^2 + Y^2) ]
                          * [ X^2 * (1 + X^2 + Y^2) / ( (1 + X^2)*(X^2 + Y^2) ) ]^(X^2)
@@ -253,7 +253,7 @@ def main():
     # FORMATAÇÃO E EXIBIÇÃO DE RESULTADOS
     # --------------------------------------------------------------------------
     print("=" * 70)
-    print("  RESOLUÇÃO DO PROBLEMA DE RADIAÇÃO EM CAVIGADE PARALELEPÍPEDO 3D")
+    print("  RESOLUÇÃO DO PROBLEMA DE RADIAÇÃO EM CAVIDADE PARALELEPÍPEDO 3D")
     print("=" * 70)
     print(f"  Geometria: Largura (L) = {L:.1f} m | Comprimento (W) = {W:.1f} m | Altura (H) = {H:.1f} m")
     print("  Áreas das Superfícies:")
