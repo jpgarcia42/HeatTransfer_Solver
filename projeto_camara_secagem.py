@@ -580,5 +580,10 @@ def main():
     print(f"Gráfico salvo com sucesso como: '{plot_filename}'")
     plt.close()
     
+    print("-" * 80)
+    print("  Coeficientes de Convecção Local das Paredes (h):")
+    for i in range(6):
+        print(f"    h{i+1} = {h_conv[i]:.3f} W/m²·°C")
+
 if __name__ == "__main__":
     main()
